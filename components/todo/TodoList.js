@@ -1,15 +1,14 @@
 import { useState } from 'react';
 import classes from './TodoList.module.css';
-import NewTodoForm from './NewTodoForm'; // Adjust the import path as needed
-import Card from '../ui/Card'; // Import Card component
 
 function TodoList(props) {
   const [todos, setTodos] = useState(props.Todos);
-  const [editTodoId, setEditTodoId] = useState(null);
-  const [editedTodoData, setEditedTodoData] = useState({ title: '', description: '' });
+  const [editId, setEditId] = useState(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
 
   const toggleTodoHandler = async (id, hasDone) => {
-    const response = await fetch('/api/update-todo', {
+    const response = await fetch('/api/patch-todo', {
       method: 'PATCH',
       body: JSON.stringify({ id, hasDone: !hasDone }),
       headers: {
@@ -40,15 +39,16 @@ function TodoList(props) {
     }
   };
 
-  const editTodoHandler = (todo) => {
-    setEditTodoId(todo.id);
-    setEditedTodoData({ title: todo.title, description: todo.description });
+  const startEditingHandler = (todo) => {
+    setEditId(todo.id);
+    setEditTitle(todo.title);
+    setEditDescription(todo.description);
   };
 
-  const saveTodoHandler = async (id) => {
+  const saveEditHandler = async (id) => {
     const response = await fetch('/api/update-todo', {
-      method: 'PATCH',
-      body: JSON.stringify({ id, ...editedTodoData }),
+      method: 'PUT',
+      body: JSON.stringify({ id, title: editTitle, description: editDescription, hasDone: false }),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -57,24 +57,13 @@ function TodoList(props) {
     if (response.ok) {
       setTodos((prevTodos) =>
         prevTodos.map((todo) =>
-          todo.id === id ? { ...todo, ...editedTodoData } : todo
+          todo.id === id ? { ...todo, title: editTitle, description: editDescription } : todo
         )
       );
-      setEditTodoId(null);
+      setEditId(null);
+      setEditTitle('');
+      setEditDescription('');
     }
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setEditedTodoData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
-  };
-
-  const handleEditSubmit = (event) => {
-    event.preventDefault();
-    saveTodoHandler(editTodoId);
   };
 
   return (
@@ -89,29 +78,37 @@ function TodoList(props) {
               checked={todo.hasDone}
               onChange={() => toggleTodoHandler(todo.id, todo.hasDone)}
             />
-            {editTodoId === todo.id ? (
-              <Card className={classes.card}>
-                <NewTodoForm
-                  title={editedTodoData.title}
-                  description={editedTodoData.description}
-                  onChange={handleChange}
-                  onSubmit={handleEditSubmit}
-                />
-              </Card>
-            ) : (
+            {editId === todo.id ? (
               <div>
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                />
+                <input
+                  type="text"
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                />
+                <button onClick={() => saveEditHandler(todo.id)}>Save</button>
+              </div>
+            ) : (
+              <>
                 <span className={classes.title}>{todo.title}</span>
                 <span className={classes.description}>{todo.description}</span>
-                <button className={classes.edit} onClick={() => editTodoHandler(todo)}>
+                <button
+                  className={classes.edit}
+                  onClick={() => startEditingHandler(todo)}
+                >
                   &#128393;
                 </button>
-              </div>
+              </>
             )}
             <button
               className={classes.delete}
               onClick={() => deleteTodoHandler(todo.id)}
             >
-              &#x1F5D1; 
+              &#x1F5D1;
             </button>
           </li>
         ))}
@@ -127,29 +124,13 @@ function TodoList(props) {
               checked={todo.hasDone}
               onChange={() => toggleTodoHandler(todo.id, todo.hasDone)}
             />
-            {editTodoId === todo.id ? (
-              <Card className={classes.card}>
-                <NewTodoForm
-                  title={editedTodoData.title}
-                  description={editedTodoData.description}
-                  onChange={handleChange}
-                  onSubmit={handleEditSubmit}
-                />
-              </Card>
-            ) : (
-              <div>
-                <span className={classes.title}>{todo.title}</span>
-                <span className={classes.description}>{todo.description}</span>
-                <button className={classes.edit} onClick={() => editTodoHandler(todo)}>
-                  &#128393; 
-                </button>
-              </div>
-            )}
+            <span className={classes.title}>{todo.title}</span>
+            <span className={classes.description}>{todo.description}</span>
             <button
               className={classes.delete}
               onClick={() => deleteTodoHandler(todo.id)}
             >
-              &#x1F5D1; 
+              &#x1F5D1;
             </button>
           </li>
         ))}

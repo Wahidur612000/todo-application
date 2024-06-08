@@ -1,8 +1,8 @@
 import { MongoClient, ObjectId } from 'mongodb';
 
 async function handler(req, res) {
-  if (req.method === 'PUT') { // Change PATCH to PUT
-    const { id, title, description, hasDone } = req.body;
+  if (req.method === 'PATCH') {
+    const { id, hasDone } = req.body;
 
     const client = await MongoClient.connect(
       'mongodb+srv://wahidur:wahidur8850@cluster0.fqth8tj.mongodb.net/todos?retryWrites=true&w=majority&appName=Cluster0'
@@ -13,7 +13,7 @@ async function handler(req, res) {
 
     await TodosCollection.updateOne(
       { _id: new ObjectId(id) },
-      { $set: { title, description, hasDone } }
+      { $set: { hasDone: hasDone } }
     );
 
     client.close();
